@@ -1,49 +1,78 @@
 from pkg.plugin.context import register, handler, llm_func, BasePlugin, APIHost, EventContext
 from pkg.plugin.events import *  # 导入事件类
+import re
+import requests
+from pkg.platform.types import *
+from PIL import Image, ImageDraw, ImageFont
+import io
 
-
+'''
+当收到GitHub仓库链接时，对GitHub链接进行分析并发送包含仓库信息的图片（空白背景）
+'''
 # 注册插件
-@register(name="Hello", description="hello world", version="0.1", author="RockChinQ")
-class MyPlugin(BasePlugin):
-
+@register(name='GitAnalysis', description='当收到GitHub仓库链接时，对GitHub链接进行分析并发送包含仓库信息的图片（空白背景）', version='0.12', author="sheetung")
+class GitHubAnalysisPlugin(BasePlugin):
     # 插件加载时触发
     def __init__(self, host: APIHost):
         pass
 
-    # 异步初始化
-    async def initialize(self):
-        pass
-
-    # 当收到个人消息时触发
-    @handler(PersonNormalMessageReceived)
-    async def person_normal_message_received(self, ctx: EventContext):
-        msg = ctx.event.text_message  # 这里的 event 即为 PersonNormalMessageReceived 的对象
-        if msg == "hello":  # 如果消息为hello
-
-            # 输出调试信息
-            self.ap.logger.debug("hello, {}".format(ctx.event.sender_id))
-
-            # 回复消息 "hello, <发送者id>!"
-            ctx.add_return("reply", ["hello, {}!".format(ctx.event.sender_id)])
-
-            # 阻止该事件默认行为（向接口获取回复）
-            ctx.prevent_default()
-
-    # 当收到群消息时触发
-    @handler(GroupNormalMessageReceived)
+    @handler(PersonMessageReceived)
+    @handler(GroupMessageReceived)
     async def group_normal_message_received(self, ctx: EventContext):
-        msg = ctx.event.text_message  # 这里的 event 即为 GroupNormalMessageReceived 的对象
-        if msg == "hello":  # 如果消息为hello
+        msg = str(ctx.event.message_chain).strip()
+        # 如果msg含有https://github.com/字段则截取仓库信息
+        github_match = re.search(r'https://github.com/([\w-]+)/([\w-]+)', msg)
+        if github_match:
+            owner = github_match.group(1)
+            repo = github_match.group(2)
+            # 发送仓库名称、描述、仓库链接、星标数、分叉数等信息
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'
+            }
+            # 获取仓库基本信息
+            repo_response = requests.get(f"https://api.github.com/repos/{owner}/{repo}", headers=headers)
+            repo_data = repo_response.json()
 
-            # 输出调试信息
-            self.ap.logger.debug("hello, {}".format(ctx.event.sender_id))
+            # 获取开放的 issue 数量
+            issues_response = requests.get(f"https://api.github.com/repos/{owner}/{repo}/issues?state=open", headers=headers)
+            open_issues = len(issues_response.json())
 
-            # 回复消息 "hello, everyone!"
-            ctx.add_return("reply", ["hello, everyone!"])
+            if repo_response.status_code == 200:
+                repo_name = repo_data['name']
+                repo_description = repo_data['description'] if repo_data['description'] else "暂无描述"
+                repo_url = repo_data['html_url']
+                stars = repo_data['stargazers_count']
+                forks = repo_data['forks_count']
 
-            # 阻止该事件默认行为（向接口获取回复）
-            ctx.prevent_default()
+                # 获取 README.md 内容
+                readme_response = requests.get(f"https://api.github.com/repos/{owner}/{repo}/readme", headers=headers)
+                project_image_link = ""
+                if readme_response.status_code == 200:
+                    readme_data = readme_response.json()
+                    import base64
+                    readme_content = base64.b64decode(readme_data['content']).decode('utf-8')
+                    # 提取 README 中的第一张图片链接
+                    image_match = re.search(r'!\[.*?\]\((.*?)\)', readme_content)
+                    if image_match:
+                        image_url = image_match.group(1)
+                        project_image_link = f"![项目图片]({image_url})"
 
-    # 插件卸载时触发
-    def __del__(self):
-        pass
+                # 构建要发送的信息
+                message = [
+                    f"仓库名称：{repo_name}\n",
+                    f"仓库描述：{repo_description}\n",
+                    f"仓库链接：{repo_url}\n",
+                    f"星标数：{stars}\n",
+                    f"分叉数：{forks}\n",
+                    f"开放的 issue 数量：{open_issues}\n",
+                    project_image_link
+                ]
+
+                # 发送信息
+                await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), MessageChain(message))
+                ctx.prevent_default()
+                ctx.prevent_postorder()
+            else:
+                await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), ["仓库信息获取失败"])
+                ctx.prevent_default()
+                ctx.prevent_postorder()
