@@ -3,14 +3,12 @@ from pkg.plugin.events import *  # 导入事件类
 import re
 import requests
 from pkg.platform.types import *
-from PIL import Image, ImageDraw, ImageFont
-import io
 
 '''
-当收到GitHub仓库链接时，对GitHub链接进行分析并发送包含仓库信息的图片（空白背景）
+当收到GitHub仓库链接时，对GitHub链接解析
 '''
 # 注册插件
-@register(name='GitAnalysis', description='当收到GitHub仓库链接时，对GitHub链接进行分析并发送包含仓库信息的图片（空白背景）', version='0.12', author="sheetung")
+@register(name='GitAnalysis', description='当收到GitHub仓库链接时，对GitHub链接解析', version='0.17', author="sheetung")
 class GitHubAnalysisPlugin(BasePlugin):
     # 插件加载时触发
     def __init__(self, host: APIHost):
@@ -44,29 +42,19 @@ class GitHubAnalysisPlugin(BasePlugin):
                 stars = repo_data['stargazers_count']
                 forks = repo_data['forks_count']
 
-                # 获取 README.md 内容
-                readme_response = requests.get(f"https://api.github.com/repos/{owner}/{repo}/readme", headers=headers)
-                project_image_link = ""
-                if readme_response.status_code == 200:
-                    readme_data = readme_response.json()
-                    import base64
-                    readme_content = base64.b64decode(readme_data['content']).decode('utf-8')
-                    # 提取 README 中的第一张图片链接
-                    image_match = re.search(r'!\[.*?\]\((.*?)\)', readme_content)
-                    if image_match:
-                        image_url = image_match.group(1)
-                        project_image_link = f"![项目图片]({image_url})"
-
+                image_url = ""
                 # 构建要发送的信息
-                message = [
+                message = []
+                if image_url:
+                    message.append(Image(url=image_url))
+                message.extend([
                     f"仓库名称：{repo_name}\n",
                     f"仓库描述：{repo_description}\n",
                     f"仓库链接：{repo_url}\n",
-                    f"星标数：{stars}\n",
-                    f"分叉数：{forks}\n",
-                    f"开放的 issue 数量：{open_issues}\n",
-                    project_image_link
-                ]
+                    f"starts：{stars}\n",
+                    f"forks ：{forks}\n",
+                    f"issue ：{open_issues}\n"
+                ])
 
                 # 发送信息
                 await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), MessageChain(message))
@@ -76,3 +64,7 @@ class GitHubAnalysisPlugin(BasePlugin):
                 await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), ["仓库信息获取失败"])
                 ctx.prevent_default()
                 ctx.prevent_postorder()
+    
+    # 插件卸载时触发
+    def __del__(self):
+        pass
