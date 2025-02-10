@@ -14,7 +14,7 @@ class GitHubAnalysisPlugin(BasePlugin):
     def __init__(self, host: APIHost):
         pass
 
-    @handler(PersonMessageReceived)
+    # @handler(PersonMessageReceived)
     @handler(GroupMessageReceived)
     async def group_normal_message_received(self, ctx: EventContext):
         msg = str(ctx.event.message_chain).strip()
