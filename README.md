@@ -1,4 +1,4 @@
-# BiliAnalysis
+# GitAnalysis
 
 LangBot 插件，解析git仓库信息，包括starts,fork,等
 
