@@ -1,29 +1,77 @@
 # GitAnalysis
 
-LangBot 插件，解析git仓库信息，包括starts,fork,等
+<p align="center"> <img src="https://img.shields.io/badge/LangBot-Plugin-blue" alt="LangBot Plugin"> <img src="https://img.shields.io/badge/Version-v0.23-green" alt="Version"> </p><p align="center"> <b>LangBot 插件，解析 Git 仓库信息，包括 Stars、Forks 等。</b> </p><p align="center"> <img src="./figs/1.png" alt="GitHub 解析示例" width="400"> <img src="./figs/2.png" alt="Gitee 解析示例" width="400"> </p>
 
-![github解析](./figs/1.png)
+------
 
-![gitee解析](./figs/2.png)
+## 📚 插件简介
 
+`GitAnalysis` 是一个为 [LangBot](https://github.com/RockChinQ/QChatGPT) 设计的插件，能够自动解析 GitHub 和 Gitee 仓库链接，并提取关键信息（如 Stars、Forks、仓库描述等）。它可以帮助用户快速了解目标仓库的基本情况，无需手动访问网页查看。
 
-## 安装
-
-配置完成 [QChatGPT](https://github.com/RockChinQ/QChatGPT) 主程序后使用管理员账号向机器人发送命令即可安装：
-
+```html
+<img src="./figs/1.png" alt="GitHub 解析示例" width="400" style="margin-right: 10px;">
+<img src="./figs/2.png" alt="Gitee 解析示例" width="400">
 ```
-!plugin get https://github.com/Hanschase/BiliAnalysis
+
+------
+
+## 🛠️ 安装方法
+
+在配置完成 [LangBot](https://github.com/RockChinQ/QChatGPT) 主程序后，使用管理员账号向机器人发送以下命令即可安装：
+
+bash复制
+
+```bash
+!plugin get https://github.com/your-repo-url/GitAnalysis
 ```
-或查看详细的[插件安装说明](https://qchatgpt.rockchin.top/develop/plugin-intro.html#%E6%8F%92%E4%BB%B6%E7%94%A8%E6%B3%95)
 
-## 使用
+或者查看详细的 [插件安装说明](https://qchatgpt.rockchin.top/develop/plugin-intro.html#插件用法)。
 
-发送GitHub/gitee链接时机器人自动解析链接并发送。
+------
 
+## 🚀 使用方法
 
-## 更新历史
+在对话中发送 GitHub 或 Gitee 的仓库链接，机器人会自动解析链接并发送以下信息：
 
-v0.18 完善初始功能
+- 仓库名称
+- Stars 数量
+- Forks 数量
+- 仓库描述
+- 其他相关信息（如仓库图标等）
 
-v0.23 增加对gitee的支持
-<!-- 插件开发者自行填写插件使用说明 -->
+例如：
+
+```plaintext
+输入：https://github.com/RockChinQ/QChatGPT  
+输出：  
+仓库名称：LangBot  
+Stars：100  
+Forks：50  
+描述：大模型原生即时通信机器人平台，支持多平台和多种 LLM。
+仓库链接：https://github.com/RockChinQ/QChatGPT
+```
+
+------
+
+## 📝 待办事项（TODO）
+
+- [ ] 完成 UI 优化，提升用户交互体验。
+
+------
+
+## 📋 更新历史
+
+- **v0.23**：增加对 Gitee 的支持。
+- **v0.18**：完善初始功能，支持 GitHub 仓库解析。
+
+------
+
+## 📝 关于
+
+`GitAnalysis` 是一个基于 [LangBot](https://github.com/RockChinQ/QChatGPT) 的插件，旨在帮助用户快速获取 Git 仓库的关键信息。更多详情请参考 [LangBot 文档](https://qchatgpt.rockchin.top/)。
+
+<p align="center"> <a href="https://github.com/your-repo-url/GitAnalysis/issues">报告问题</a> | <a href="https://github.com/your-repo-url/GitAnalysis/pulls">贡献代码</a> </p>
+
+------
+
+### 🌟 如果你喜欢这个项目，请给它一个星标！🌟
