@@ -5,7 +5,7 @@ import requests
 from pkg.platform.types import *
 
 @register(name='GitAnalysis', description='解析GitHub/Gitee仓库链接并展示信息', version='0.23', author="sheetung")
-class GitHubAnalysisPlugin(BasePlugin):
+class MyPlugin(BasePlugin):
 
     def __init__(self, host: APIHost):
         pass
