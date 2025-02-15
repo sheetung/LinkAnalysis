@@ -17,7 +17,7 @@
 bash复制
 
 ```bash
-!plugin get https://github.com/your-repo-url/GitAnalysis
+!plugin get https://github.com/sheetung/GitAnalysis
 ```
 
 或者查看详细的 [插件安装说明](https://qchatgpt.rockchin.top/develop/plugin-intro.html#插件用法)。
