@@ -8,6 +8,10 @@
 
 `GitAnalysis` 是一个为 [LangBot](https://github.com/RockChinQ/QChatGPT) 设计的插件，能够自动解析 GitHub 和 Gitee 仓库链接，并提取关键信息（如 Stars、Forks、仓库描述等）。它可以帮助用户快速了解目标仓库的基本情况，无需手动访问网页查看。
 
+加群push群主更新，反馈bug,交流
+
+[![QQ群](https://img.shields.io/badge/QQ群-965312424-green)](https://qm.qq.com/cgi-bin/qm/qr?k=en97YqjfYaLpebd9Nn8gbSvxVrGdIXy2&jump_from=webapi&authKey=41BmkEjbGeJ81jJNdv7Bf5EDlmW8EHZeH7/nktkXYdLGpZ3ISOS7Ur4MKWXC7xIx)
+
 ------
 
 ## 🛠️ 安装方法
