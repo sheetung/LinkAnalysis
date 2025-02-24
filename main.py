@@ -126,10 +126,13 @@ class LinkMasterPlugin(BasePlugin):
             )
             data = resp.json()
             message = [
+                "━" * 3,
                 f"📦 {platform} 仓库：{data['name']}",
                 f"📄 描述：{data.get('description', '暂无')}",
                 f"⭐ Stars: {data.get('stargazers_count', 0)}",
                 f"🍴 Forks: {data.get('forks_count', 0)}",
+                f"📌 Forks: {data.get('forks_count', 0)}",
+                "━" * 3,
                 f"🌐 链接：{data['html_url']}"
             ]
             await ctx.send_message(
