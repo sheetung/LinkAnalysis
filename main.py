@@ -3,6 +3,7 @@ from pkg.plugin.events import *
 import re
 import requests
 from typing import Dict, Tuple, Optional
+from pkg.platform.types import *
 
 # -------------------------- 插件核心逻辑 --------------------------
 @register(
@@ -33,7 +34,8 @@ class LinkMasterPlugin(BasePlugin):
             }
         }
 
-    @handler(PersonMessageReceived, GroupMessageReceived)
+    @handler(PersonMessageReceived)
+    @handler(GroupMessageReceived)
     async def message_handler(self, ctx: EventContext):
         """消息处理入口"""
         msg = str(ctx.event.message_chain).strip()
@@ -71,20 +73,35 @@ class LinkMasterPlugin(BasePlugin):
             if data["code"] != 0:
                 raise ValueError("Bilibili API error")
 
-            info = data["data"]
-            await ctx.send_message(
-                ctx.event.launcher_type,
-                str(ctx.event.launcher_id),
-                MessageChain([
-                    Image(url=info["pic"]),
-                    f"📺 标题：{info['title']}\n",
-                    f"👤 UP主：{info['owner']['name']}\n",
-                    f"🔗 链接：https://www.bilibili.com/video/{id_type}{video_id}"
-                ])
-            )
-        except Exception as e:
-            await ctx.send_message("视频解析失败")
+            video_data = data['data']
+            stat_data = video_data['stat']  # 核心统计数据
 
+            description = video_data.get('desc') or video_data.get('dynamic', '')
+            if isinstance(description, str) and len(description) > 0:
+                description = f"📝 描述：{description[:97]}..." if len(description) > 100 else f"📝 描述：{description}"
+            else:
+                description = None
+
+            # 构建消息内容
+            message_chain = MessageChain([
+                Image(url=video_data['pic']),
+                Plain(f"🎐 标题：{video_data['title']}\n"),
+                Plain(f"😃 UP主：{video_data['owner']['name']}\n"),
+            ])
+            
+            # 添加描述（只有存在时显示）
+            if description:
+                message_chain.append(Plain(description + "\n"))
+
+            message_chain.extend([
+                Plain(f"💖 点赞：{stat_data.get('like', 0):,}  "),
+                Plain(f"🪙 投币：{stat_data.get('coin', 0):,}  "),
+                Plain(f"✨ 收藏：{stat_data.get('favorite', 0):,}\n"),
+                Plain(f"🌐 链接：https://www.bilibili.com/video/{video_id}")
+            ])
+            await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), message_chain)
+        except Exception as e:
+            await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), MessageChain([Plain(f"视频解析失败")]))
     async def handle_github(self, ctx: EventContext, match: re.Match):
         """GitHub仓库解析逻辑"""
         await self._handle_git_repo(ctx, match.groups(), "GitHub",
@@ -113,7 +130,7 @@ class LinkMasterPlugin(BasePlugin):
                 f"📄 描述：{data.get('description', '暂无')}",
                 f"⭐ Stars: {data.get('stargazers_count', 0)}",
                 f"🍴 Forks: {data.get('forks_count', 0)}",
-                f"🔗 链接：{data['html_url']}"
+                f"🌐 链接：{data['html_url']}"
             ]
             await ctx.send_message(
                 ctx.event.launcher_type,
@@ -121,7 +138,7 @@ class LinkMasterPlugin(BasePlugin):
                 MessageChain([Plain(text="\n".join(message))])
             )
         except Exception as e:
-            await ctx.send_message("仓库信息获取失败")
+            await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), MessageChain([Plain(f"仓库信息获取失败")]))
 
     def __del__(self):
         """清理资源"""
