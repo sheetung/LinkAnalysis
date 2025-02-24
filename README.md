@@ -1,12 +1,12 @@
-# GitAnalysis
+# LinkAnalysis
 
-<p align="center"> <img src="https://img.shields.io/badge/LangBot-Plugin-blue" alt="LangBot Plugin"> <img src="https://img.shields.io/badge/Version-v0.23-green" alt="Version"> </p><p align="center"> <b>LangBot 插件，解析 Git 仓库信息，包括 Stars、Forks 等。</b> </p><p align="center"> <img src="./figs/1.png" alt="GitHub 解析示例" width="400"> <img src="./figs/2.png" alt="Gitee 解析示例" width="400"> </p>
+<p align="center"> <img src="https://img.shields.io/badge/LangBot-Plugin-blue" alt="LangBot Plugin"> <img src="https://img.shields.io/badge/Version-v0.23-green" alt="Version"> </p><p align="center"> <b>LangBot 插件，解析 Link链接信息等反馈。</b> </p><p align="center"> <img src="./figs/1.png" alt="GitHub 解析示例" width="400"> <img src="./figs/2.png" alt="Gitee 解析示例" width="400"> </p>
 
 ------
 
 ## 📚 插件简介
 
-`GitAnalysis` 是一个为 [LangBot](https://github.com/RockChinQ/QChatGPT) 设计的插件，能够自动解析 GitHub 和 Gitee 仓库链接，并提取关键信息（如 Stars、Forks、仓库描述等）。它可以帮助用户快速了解目标仓库的基本情况，无需手动访问网页查看。
+`LinkAnalysis` 是一个为 [LangBot](https://github.com/RockChinQ/QChatGPT) 设计的插件，能够自动解析 GitHub 和 Gitee 仓库链接，并提取关键信息（如 Stars、Forks、仓库描述等）。它可以帮助用户快速了解目标仓库的基本情况，无需手动访问网页查看。
 
 加群push群主更新，反馈bug,交流
 
@@ -21,7 +21,7 @@
 bash复制
 
 ```bash
-!plugin get https://github.com/sheetung/GitAnalysis
+!plugin get https://github.com/sheetung/LinkAnalysis
 ```
 
 或者查看详细的 [插件安装说明](https://qchatgpt.rockchin.top/develop/plugin-intro.html#插件用法)。
@@ -54,6 +54,7 @@ Forks：50
 
 ## 📝 待办事项（TODO）
 
+- [ ] 解析bilibili链接
 - [ ] 完成 UI 优化，提升用户交互体验。
 
 ------
@@ -67,9 +68,9 @@ Forks：50
 
 ## 📝 关于
 
-`GitAnalysis` 是一个基于 [LangBot](https://github.com/RockChinQ/QChatGPT) 的插件，旨在帮助用户快速获取 Git 仓库的关键信息。更多详情请参考 [LangBot 文档](https://qchatgpt.rockchin.top/)。
+`GitAnalysis` 是一个基于 [LangBot](https://github.com/RockChinQ/QChatGPT) 的插件，旨在帮助用户快速获取 Link 仓库的关键信息。更多详情请参考 [LangBot 文档](https://qchatgpt.rockchin.top/)。
 
-<p align="center"> <a href="https://github.com/your-repo-url/GitAnalysis/issues">报告问题</a> | <a href="https://github.com/your-repo-url/GitAnalysis/pulls">贡献代码</a> </p>
+<p align="center"> <a href="https://github.com/your-repo-url/LinkAnalysis/issues">报告问题</a> | <a href="https://github.com/your-repo-url/LinkAnalysis/pulls">贡献代码</a> </p>
 
 ------
 

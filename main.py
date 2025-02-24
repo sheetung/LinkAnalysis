@@ -1,85 +1,128 @@
-from pkg.plugin.context import register, handler, llm_func, BasePlugin, APIHost, EventContext
+from pkg.plugin.context import register, handler, BasePlugin, APIHost, EventContext
 from pkg.plugin.events import *
 import re
 import requests
-from pkg.platform.types import *
+from typing import Dict, Tuple, Optional
 
-@register(name='GitAnalysis', description='解析GitHub/Gitee仓库链接并展示信息', version='0.23', author="sheetung")
-class MyPlugin(BasePlugin):
-
+# -------------------------- 插件核心逻辑 --------------------------
+@register(
+    name="LinkAnalysis",
+    description="解析哔哩哔哩、GitHub、Gitee等多种链接并展示信息",
+    version="0.7",
+    author="sheetung"
+)
+class LinkMasterPlugin(BasePlugin):
     def __init__(self, host: APIHost):
-        pass
+        """初始化时注册所有支持的链接类型"""
+        self.link_handlers = {
+            "bilibili": {
+                "patterns": [
+                    r"www\.bilibili\.com/video/(BV\w+)",  # 标准链接
+                    r"b23\.tv/(BV\w+)",                  # 短链接
+                    r"www\.bilibili\.com/video/av(\d+)"  # 旧版av号
+                ],
+                "handler": self.handle_bilibili
+            },
+            "github": {
+                "patterns": [r"github\.com/([^/]+)/([^/?#]+)"],  # 用户/仓库
+                "handler": self.handle_github
+            },
+            "gitee": {
+                "patterns": [r"gitee\.com/([^/]+)/([^/?#]+)"],  # 用户/仓库
+                "handler": self.handle_gitee
+            }
+        }
 
-    @handler(PersonMessageReceived)
-    @handler(GroupMessageReceived)
-    async def group_normal_message_received(self, ctx: EventContext):
+    @handler(PersonMessageReceived, GroupMessageReceived)
+    async def message_handler(self, ctx: EventContext):
+        """消息处理入口"""
         msg = str(ctx.event.message_chain).strip()
-        
-        # 匹配GitHub或Gitee仓库链接
-        github_match = re.search(r'https?://github\.com/([^/]+)/([^/?#]+)', msg)
-        gitee_match = re.search(r'https?://gitee\.com/([^/]+)/([^/?#]+)', msg)
+        for platform in self.link_handlers.values():  # 遍历所有支持平台
+            match = self._match_link(msg, platform["patterns"])
+            if match:
+                await platform["handler"](ctx, match)
+                ctx.prevent_default()
+                ctx.prevent_postorder()
+                return  # 匹配成功后立即退出
 
-        if not (github_match or gitee_match):
-            return
+    def _match_link(self, msg: str, patterns: list) -> Optional[re.Match]:
+        """同一平台匹配多个正则"""
+        for pattern in patterns:
+            if match := re.search(pattern, msg):
+                return match
+        return None
 
-        # 确定平台和仓库信息
-        platform = "GitHub" if github_match else "Gitee"
-        owner, repo = (github_match.groups() if github_match else gitee_match.groups())
+    # -------------------------- 各平台处理逻辑 --------------------------
+    async def handle_bilibili(self, ctx: EventContext, match: re.Match):
+        """B站视频解析逻辑"""
+        id_type = "BV" if "BV" in match.group(0) else "av"
+        video_id = match.group(1)  # 从正则捕获组提取ID
 
-        # 构造API地址
+        # 调用B站API获取信息
         api_url = (
-            f"https://api.github.com/repos/{owner}/{repo}"
-            if platform == "GitHub"
-            else f"https://gitee.com/api/v5/repos/{owner}/{repo}"
+            f"https://api.bilibili.com/x/web-interface/view?bvid={video_id}" 
+            if id_type == "BV" else 
+            f"https://api.bilibili.com/x/web-interface/view?aid={video_id}"
         )
 
-        headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/80.0.3987.163 Safari/537.36'}
-        
         try:
-            repo_response = requests.get(api_url, headers=headers, timeout=10)
-            repo_response.raise_for_status()
-            repo_data = repo_response.json()
+            resp = requests.get(api_url, headers={"User-Agent": "Mozilla/5.0"})
+            data = resp.json()
+            if data["code"] != 0:
+                raise ValueError("Bilibili API error")
+
+            info = data["data"]
+            await ctx.send_message(
+                ctx.event.launcher_type,
+                str(ctx.event.launcher_id),
+                MessageChain([
+                    Image(url=info["pic"]),
+                    f"📺 标题：{info['title']}\n",
+                    f"👤 UP主：{info['owner']['name']}\n",
+                    f"🔗 链接：https://www.bilibili.com/video/{id_type}{video_id}"
+                ])
+            )
         except Exception as e:
-            await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), ["仓库信息获取失败"])
-            ctx.prevent_default()
-            ctx.prevent_postorder()
-            return
+            await ctx.send_message("视频解析失败")
 
-        # 提取仓库信息
-        repo_name = repo_data.get('name', '未知仓库')
-        repo_description = repo_data.get('description', '暂无描述') or '暂无描述'
-        repo_url = repo_data.get('html_url', '')
-        stars = repo_data.get('stargazers_count', 0)
-        forks = repo_data.get('forks_count', 0)
-        open_issues = repo_data.get('open_issues_count', 0)
-        cover_url = repo_data.get('owner', {}).get('avatar_url', '')
+    async def handle_github(self, ctx: EventContext, match: re.Match):
+        """GitHub仓库解析逻辑"""
+        await self._handle_git_repo(ctx, match.groups(), "GitHub",
+            api_template="https://api.github.com/repos/{owner}/{repo}")
 
-        # 处理长描述
-        if len(repo_description) > 100:
-            repo_description = f"{repo_description[:97]}..."
+    async def handle_gitee(self, ctx: EventContext, match: re.Match):
+        """Gitee仓库解析逻辑"""
+        await self._handle_git_repo(ctx, match.groups(), "Gitee",
+            api_template="https://gitee.com/api/v5/repos/{owner}/{repo}")
 
-        # 构造美观的消息格式
-        message = []
-        if cover_url:
-            # message.append(Image(url=cover_url))
-            pass
-        
-        info_lines = [
-            "━" * 3,
-            f"📦 名称：{repo_name}",
-            f"📄 描述：{repo_description}",
-            f"⭐ Stars：{stars}",
-            f"🍴 Forks：{forks}",
-            f"📌 Issues：{open_issues}",
-            "━" * 3,
-            f"🌐 {platform}链接：{repo_url}"
-        ]
-        
-        message.extend([Plain(text=line + "\n") for line in info_lines])
-
-        await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), MessageChain(message))
-        ctx.prevent_default()
-        ctx.prevent_postorder()
+    async def _handle_git_repo(self, ctx: EventContext, 
+                             groups: Tuple[str], 
+                             platform: str,
+                             api_template: str):
+        """Git平台通用解析逻辑"""
+        owner, repo = groups
+        try:
+            resp = requests.get(
+                api_template.format(owner=owner, repo=repo),
+                headers={"User-Agent": "Mozilla/5.0"},
+                timeout=10
+            )
+            data = resp.json()
+            message = [
+                f"📦 {platform} 仓库：{data['name']}",
+                f"📄 描述：{data.get('description', '暂无')}",
+                f"⭐ Stars: {data.get('stargazers_count', 0)}",
+                f"🍴 Forks: {data.get('forks_count', 0)}",
+                f"🔗 链接：{data['html_url']}"
+            ]
+            await ctx.send_message(
+                ctx.event.launcher_type,
+                str(ctx.event.launcher_id),
+                MessageChain([Plain(text="\n".join(message))])
+            )
+        except Exception as e:
+            await ctx.send_message("仓库信息获取失败")
 
     def __del__(self):
+        """清理资源"""
         pass
