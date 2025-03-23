@@ -12,7 +12,7 @@ from pkg.platform.types import *
     version="0.72",
     author="sheetung"
 )
-class LinkMasterPlugin(BasePlugin):
+class MyPlugin(BasePlugin):
     def __init__(self, host: APIHost):
         """初始化时注册所有支持的链接类型"""
         self.link_handlers = {
