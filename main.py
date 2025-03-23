@@ -5,11 +5,11 @@ import requests
 from typing import Dict, Tuple, Optional
 from pkg.platform.types import *
 
-# -------------------------- 插件核心逻辑 --------------------------
+
 @register(
     name="LinkAnalysis",
     description="解析哔哩哔哩、GitHub、Gitee等多种链接并展示信息",
-    version="0.7",
+    version="0.72",
     author="sheetung"
 )
 class LinkMasterPlugin(BasePlugin):
@@ -82,24 +82,23 @@ class LinkMasterPlugin(BasePlugin):
             else:
                 description = None
 
-            # 构建消息内容
-            message_chain = MessageChain([
-                Image(url=video_data['pic']),
-                Plain(f"🎐 标题：{video_data['title']}\n"),
-                Plain(f"😃 UP主：{video_data['owner']['name']}\n"),
-            ])
-            
+            message_b = [
+                f"🎐 标题：{video_data['title']}",
+                f"😃 UP主：{video_data['owner']['name']}"
+            ]
             # 添加描述（只有存在时显示）
             if description:
-                message_chain.append(Plain(description + "\n"))
+                message_b.append(description.replace("\n", ""))
 
-            message_chain.extend([
-                Plain(f"💖 点赞：{stat_data.get('like', 0):,}  "),
-                Plain(f"🪙 投币：{stat_data.get('coin', 0):,}  "),
-                Plain(f"✨ 收藏：{stat_data.get('favorite', 0):,}\n"),
-                Plain(f"🌐 链接：https://www.bilibili.com/video/{video_id}")
+            message_b.extend([
+                f"💖 点赞：{stat_data.get('like', 0):,}  ",
+                f"🪙 投币：{stat_data.get('coin', 0):,}  ",
+                f"✨ 收藏：{stat_data.get('favorite', 0):,}",
+                f"🌐 链接：https://www.bilibili.com/video/{video_id}"
             ])
-            await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), message_chain)
+            message_b_chain = MessageChain([Plain(text="\n".join(message_b))])
+            message_b_chain.insert(0,Image(url=video_data['pic']))
+            await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), message_b_chain)
         except Exception as e:
             await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), MessageChain([Plain(f"视频解析失败")]))
     async def handle_github(self, ctx: EventContext, match: re.Match):
@@ -125,7 +124,7 @@ class LinkMasterPlugin(BasePlugin):
                 timeout=10
             )
             data = resp.json()
-            message = [
+            message_git = [
                 "━" * 3,
                 f"📦 {platform} 仓库：{data['name']}",
                 f"📄 描述：{data.get('description', '暂无')}",
@@ -138,7 +137,7 @@ class LinkMasterPlugin(BasePlugin):
             await ctx.send_message(
                 ctx.event.launcher_type,
                 str(ctx.event.launcher_id),
-                MessageChain([Plain(text="\n".join(message))])
+                MessageChain([Plain(text="\n".join(message_git))])
             )
         except Exception as e:
             await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), MessageChain([Plain(f"仓库信息获取失败")]))

@@ -1,6 +1,6 @@
 # LinkAnalysis
 
-<p align="center"> <img src="https://img.shields.io/badge/LangBot-Plugin-blue" alt="LangBot Plugin"> <img src="https://img.shields.io/badge/Version-v0.23-green" alt="Version"> </p>
+<p align="center"> <img src="https://img.shields.io/badge/LangBot-Plugin-blue" alt="LangBot Plugin"> <img src="https://img.shields.io/badge/Version-v0.7-green" alt="Version"> </p>
 <p align="center"> <b>LangBot 插件，解析 Link链接信息等反馈。</b> </p>
 <p align="center"> <img src="./figs/1.png" alt="GitHub 解析示例" width="400"> <img src="./figs/2.png" alt="Gitee 解析示例" width="400"> </p>
 <p align="center"> <img src="./figs/3.png" alt="bilibili 解析示例" width="400"> </p>
