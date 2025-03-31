@@ -6,7 +6,6 @@ from typing import Dict, Tuple, Optional
 from pkg.platform.types import *
 # from .card_ui import CardGenerator
 
-
 @register(
     name="LinkAnalysis",
     description="解析哔哩哔哩、GitHub、Gitee等多种链接并展示信息",
@@ -66,6 +65,8 @@ class MyPlugin(BasePlugin):
             ctn = not found
         if not ctn:
             # print(f'您被杀了哦')
+            return
+        if 'plugin' in msg:
             return
         
         for platform in self.link_handlers.values():  # 遍历所有支持平台
@@ -129,12 +130,12 @@ class MyPlugin(BasePlugin):
             message_b_chain.insert(0,Image(url=video_data['pic']))
 
             # 生成UI
-            card_data = {
-                "title": video_data['title'],
-                "owner": video_data['owner'],
-                "stat": stat_data,
-                "description": description
-            }
+            # card_data = {
+            #     "title": video_data['title'],
+            #     "owner": video_data['owner'],
+            #     "stat": stat_data,
+            #     "description": description
+            # }
             # if (img_path := self.ui_generator.generate_bilibili_card(card_data)):
             #     # 发送图片
             #     chainUI = MessageChain([Image(path=str(img_path))])
