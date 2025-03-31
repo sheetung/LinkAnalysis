@@ -4,6 +4,7 @@ import re
 import requests
 from typing import Dict, Tuple, Optional
 from pkg.platform.types import *
+# from .card_ui import CardGenerator
 
 
 @register(
@@ -33,6 +34,10 @@ class MyPlugin(BasePlugin):
                 "handler": self.handle_gitee
             }
         }
+        # self.ui_generator = CardGenerator(
+        #     wkhtml_path="data/plugins/LinkAnalysis/wkhtmltoimage",  # 可选自定义路径
+        #     temp_dir="data/plugins/LinkAnalysis/temp"           # 可选自定义目录
+        # )
 
     @handler(PersonMessageReceived)
     @handler(GroupMessageReceived)
@@ -122,6 +127,25 @@ class MyPlugin(BasePlugin):
             ])
             message_b_chain = MessageChain([Plain(text="\n".join(message_b))])
             message_b_chain.insert(0,Image(url=video_data['pic']))
+
+            # 生成UI
+            card_data = {
+                "title": video_data['title'],
+                "owner": video_data['owner'],
+                "stat": stat_data,
+                "description": description
+            }
+            # if (img_path := self.ui_generator.generate_bilibili_card(card_data)):
+            #     # 发送图片
+            #     chainUI = MessageChain([Image(path=str(img_path))])
+            #     chainUI.append(Plain(f"🌐 链接：https://www.bilibili.com/video/{video_id}"))
+            #     await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), chainUI)
+            #     # 清理图片文件
+            #     img_path.unlink()
+            #     return
+            # else:
+            #     # 回退到文本
+            #     await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), MessageChain([Plain(f"视频解析失败")]))
             await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), message_b_chain)
         except Exception as e:
             await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), MessageChain([Plain(f"视频解析失败")]))
