@@ -9,7 +9,7 @@ from pkg.platform.types import *
 @register(
     name="LinkAnalysis",
     description="解析哔哩哔哩、GitHub、Gitee等多种链接并展示信息",
-    version="0.72",
+    version="0.75",
     author="sheetung"
 )
 class MyPlugin(BasePlugin):
@@ -37,6 +37,16 @@ class MyPlugin(BasePlugin):
         #     wkhtml_path="data/plugins/LinkAnalysis/wkhtmltoimage",  # 可选自定义路径
         #     temp_dir="data/plugins/LinkAnalysis/temp"           # 可选自定义目录
         # )
+
+    # 修改后的数字格式化方法 - 只使用K单位
+    def _format_count(self, count: int) -> str:
+        """格式化数字为K单位（不使用M）"""
+        if count >= 1000:
+            # 对于1000的整数倍显示整数，否则显示1位小数
+            if count % 1000 == 0:
+                return f"{count//1000}K"
+            return f"{count/1000:.1f}K"
+        return str(count)
 
     @handler(PersonMessageReceived)
     @handler(GroupMessageReceived)
@@ -131,36 +141,20 @@ class MyPlugin(BasePlugin):
             if description:
                 message_b.append(description.replace("\n", ""))
 
+            # 使用格式化后的点赞/投币/收藏数据
             message_b.extend([
-                f"💖 点赞：{stat_data.get('like', 0):,}  ",
-                f"🪙 投币：{stat_data.get('coin', 0):,}  ",
-                f"✨ 收藏：{stat_data.get('favorite', 0):,}",
+                f"💖 点赞：{self._format_count(stat_data.get('like', 0))}  ",
+                f"🪙 投币：{self._format_count(stat_data.get('coin', 0))}  ",
+                f"✨ 收藏：{self._format_count(stat_data.get('favorite', 0))}",
                 f"🌐 链接：https://www.bilibili.com/video/{video_id}"
             ])
             message_b_chain = MessageChain([Plain(text="\n".join(message_b))])
             message_b_chain.insert(0,Image(url=video_data['pic']))
 
-            # 生成UI
-            # card_data = {
-            #     "title": video_data['title'],
-            #     "owner": video_data['owner'],
-            #     "stat": stat_data,
-            #     "description": description
-            # }
-            # if (img_path := self.ui_generator.generate_bilibili_card(card_data)):
-            #     # 发送图片
-            #     chainUI = MessageChain([Image(path=str(img_path))])
-            #     chainUI.append(Plain(f"🌐 链接：https://www.bilibili.com/video/{video_id}"))
-            #     await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), chainUI)
-            #     # 清理图片文件
-            #     img_path.unlink()
-            #     return
-            # else:
-            #     # 回退到文本
-            #     await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), MessageChain([Plain(f"视频解析失败")]))
             await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), message_b_chain)
         except Exception as e:
             await ctx.send_message(ctx.event.launcher_type, str(ctx.event.launcher_id), MessageChain([Plain(f"视频解析失败")]))
+    
     async def handle_github(self, ctx: EventContext, match: re.Match):
         """GitHub仓库解析逻辑"""
         await self._handle_git_repo(ctx, match.groups(), "GitHub",
@@ -184,13 +178,18 @@ class MyPlugin(BasePlugin):
                 timeout=10
             )
             data = resp.json()
+            
+            # 使用格式化后的数字
+            stars = self._format_count(data.get('stargazers_count', 0))
+            forks = self._format_count(data.get('forks_count', 0))
+            # watchers = self._format_count(data.get('watchers_count', 0))
+            
             message_git = [
                 "━" * 3,
                 f"📦 {platform} 仓库：{data['name']}",
                 f"📄 描述：{data.get('description', '暂无')}",
-                f"⭐ Stars: {data.get('stargazers_count', 0)}",
-                f"🍴 Forks: {data.get('forks_count', 0)}",
-                f"📌 Forks: {data.get('forks_count', 0)}",
+                f"⭐ Stars: {stars}",
+                f"🍴 Forks: {forks}",
                 "━" * 3,
                 f"🌐 链接：{data['html_url']}"
             ]
